@@ -4,73 +4,127 @@ using System.Collections.Generic;
 using System.IO;
 
 namespace Day7
-{    
+{
+    public class TreeItem
+    {
+        public string Name;
+
+        public int Weight;
+
+        public int TotalWeight;
+
+        public int Level;
+
+        public TreeItem Parent = null;
+
+        public List<TreeItem> Children = new List<TreeItem>();
+
+        public override string ToString()
+        {
+            return $"{Name}";
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
+            // Load tree
+            var root = GetInputData("./input.txt");
+
             // Part 1
-            var input = GetInputData("./input.txt");
+            Console.WriteLine($"Root: {root} L: {root.Level} W: {root.TotalWeight}");         
 
-            // Find path lengths
-            Dictionary<string, int> lengths = new Dictionary<string, int>();
-
-            foreach(var i in input.Keys)
-            {
-                int l = Traverse(input, i);
-
-                lengths.Add(i, l);
-                //Console.WriteLine($"{i}: {l}");
-            }
-
-            // Get longest path
-            var root = lengths.OrderByDescending(d => d.Value).First();
-
-            Console.WriteLine($"{root.Key}: {root.Value}");
+            // Part 1
+            TraverseWrite(root);
         }
 
-        static int Traverse(Dictionary<string, List<string>> tree, string start)
-        {            
-            int l = 0;
-
-            if (!tree.ContainsKey(start)) return l;
-
-            foreach(string e in tree[start])
-            {
-                l += Traverse(tree, e);
-            }
-
-            return l+1;
+        static void TraverseWrite(TreeItem item)
+        {
+            foreach(var c in item.Children)
+            {            
+                Console.WriteLine(new string('\t', c.Level) + $"Item: {c} L: {c.Level} W: {c.Weight} TW: {c.TotalWeight}");     
+                TraverseWrite(c);
+            }  
         }
 
-        static Dictionary<string, List<string>> GetInputData(string file)
-        {            
-            Dictionary<string, List<string>> result = new Dictionary<string, List<string>>();
+        static TreeItem GetInputData(string file)
+        {
+            Dictionary<string, TreeItem> programs = new Dictionary<string, TreeItem>();
 
-            using (StreamReader sr = new StreamReader(file)) 
+            using (StreamReader sr = new StreamReader(file))
             {
-                while(sr.EndOfStream == false)
+                while (sr.EndOfStream == false)
                 {
-                    string row  =  sr.ReadLine();
+                    string row = sr.ReadLine();
 
-                    string[] v1 = row.Split("->");
+                    string[] programInfo = row.Split("->");
 
-                    string programName = v1[0].Split(" ")[0].Trim();
+                    string programName = programInfo[0].Split(" ")[0].Trim();
+                    string programWeight = programInfo[0].Split(" ")[1].Trim(new char[] { '(', ')', ' ' });
 
-                    string[] relatedPrograms = new string[] {};
-                    if (v1.Length > 1)
+                    TreeItem i = new TreeItem
                     {
-                       string[] v2 = v1[1].Split(",");
-                       relatedPrograms = v2.Select(s => { return s.Trim(); }).ToArray();
-                    }
+                        Name = programName,
+                        Weight = int.Parse(programWeight)
+                    };
 
-                    //Console.WriteLine($"{programName} ==> {string.Join(",", relatedPrograms)}");
-                    result.Add(programName, relatedPrograms.ToList());
+                    programs.Add(programName, i);
+                    //Console.WriteLine($"{programName}: {programWeight}");                  
                 }
             }
 
-            return result;
+            TreeItem root = null;
+
+            using (StreamReader sr = new StreamReader(file))
+            {
+                while (sr.EndOfStream == false)
+                {
+                    string row = sr.ReadLine();
+
+                    string[] programInfo = row.Split("->");
+
+                    string programName = programInfo[0].Split(" ")[0].Trim();
+
+                    if (programInfo.Count()> 1)
+                    {
+                        var relatedPrograms = programInfo[1].Split(",").Select(s => { return s.Trim(); });
+
+                        foreach (var rp in relatedPrograms)
+                        {
+                            TreeItem p = programs[programName];
+                            TreeItem c = programs[rp];
+                            p.Children.Add(c);
+                            c.Parent = p;
+                        }
+                    }
+                }
+            }
+
+            // foreach (var p in programs)
+            // {
+            //     Console.WriteLine($"{p.Value.Name} -> P: {p.Value.Parent?.Name} C:{p.Value.Children.Count}");
+            // }
+
+            root = programs.Values.Where(i => i.Parent == null).First();
+
+            TraverseTreeAndUpdateItems(root);
+
+            return root;
         }
 
+        static void TraverseTreeAndUpdateItems(TreeItem item, int level=0)
+        {
+            if (item.Parent != null) item.Level += level;
+
+            item.TotalWeight = item.Weight;
+
+            foreach(var c in item.Children)
+            {                
+                TraverseTreeAndUpdateItems(c, level+1);
+            
+                item.TotalWeight += c.TotalWeight;
+            }        
+        }
     }
 }
