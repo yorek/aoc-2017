@@ -6,9 +6,9 @@ namespace Day9
     class StreamParser
     {
         private string Stream;
+
         public int CleanedCharacters { get; private set; }
-
-
+        
         public int Score { get; private set; }
         
         public StreamParser(string stream)
