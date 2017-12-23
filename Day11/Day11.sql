@@ -1,3 +1,7 @@
+/*
+https://www.redblobgames.com/grids/hexagons/#distances
+*/
+
 DROP TABLE IF EXISTS #steps_distances;
 GO
 
